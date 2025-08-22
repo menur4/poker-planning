@@ -64,9 +64,12 @@ npm run format           # Formatage code
 
 ## 📋 Roadmap
 
-### Phase 1 - MVP (Semaines 1-3) 📋
-- [ ] Architecture de base avec Clean Architecture
-- [ ] Modèles de domaine (Session, Participant, Vote)
+### Phase 1 - MVP (Semaines 1-3) 🔄
+- [x] Architecture de base avec Clean Architecture
+- [x] Modèles de domaine (Session, Participant, Vote, VotingRound)
+- [x] Value Objects (SessionId, Scale, VoteValue)
+- [x] Cas d'usage (CreateSession, JoinSession, StartVoting, SubmitVote, RevealVotes)
+- [x] Tests unitaires (221 tests passants)
 - [ ] API REST et WebSocket
 - [ ] Interface utilisateur responsive
 - [ ] Système de vote avec échelle Fibonacci

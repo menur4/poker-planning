@@ -32,17 +32,21 @@
 - **TDD** : Tests unitaires, intégration et E2E
 - **DDD** : Modélisation métier avec ubiquitous language
 
-## 📅 Roadmap Détaillée
+## Roadmap Détaillée
 
-### Phase 1 - MVP (Semaines 1-3)
+### Phase 1 - MVP (Semaines 1-3) 
 **Objectif** : Application fonctionnelle de base
 
 #### Sprint 1 (Semaine 1)
-- [ ] Configuration projet et environnement de développement
-- [ ] Architecture de base (Clean Architecture)
-- [ ] Modèles de domaine (Session, Participant, Vote)
-- [ ] Tests unitaires des entités métier
-- [ ] API REST de base (création/rejoindre session)
+- [x] Configuration projet et environnement de développement
+- [x] Architecture de base avec Clean Architecture
+- [x] Modèles de domaine (Session, Participant, Vote, VotingRound)
+- [x] Value Objects (SessionId, Scale, VoteValue)
+- [x] Cas d'usage (CreateSession, JoinSession)
+- [x] Tests unitaires (171 tests passants)
+- [ ] API REST et WebSocket
+- [ ] Interface utilisateur responsive
+- [ ] Système de vote avec échelle Fibonacci
 
 #### Sprint 2 (Semaine 2)
 - [ ] Interface utilisateur de base (React components)
