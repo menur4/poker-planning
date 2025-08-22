@@ -41,8 +41,8 @@ Permettre aux équipes agiles d'estimer la complexité des user stories de mani�
 ### Installation
 ```bash
 # Cloner le repository
-git clone https://github.com/[username]/poker-planning.git
-cd poker-planning
+git clone https://github.com/menur4/pokerplanning.git
+cd pokerplanning
 
 # Installation des dépendances
 npm run install:all
@@ -64,14 +64,14 @@ npm run format           # Formatage code
 
 ## 📋 Roadmap
 
-### Phase 1 - MVP (Semaines 1-3) ✅
-- [x] Architecture de base avec Clean Architecture
-- [x] Modèles de domaine (Session, Participant, Vote)
-- [x] API REST et WebSocket
-- [x] Interface utilisateur responsive
-- [x] Système de vote avec échelle Fibonacci
+### Phase 1 - MVP (Semaines 1-3) 📋
+- [ ] Architecture de base avec Clean Architecture
+- [ ] Modèles de domaine (Session, Participant, Vote)
+- [ ] API REST et WebSocket
+- [ ] Interface utilisateur responsive
+- [ ] Système de vote avec échelle Fibonacci
 
-### Phase 2 - Fonctionnalités (Semaines 4-5) 🔄
+### Phase 2 - Fonctionnalités (Semaines 4-5) 📋
 - [ ] Échelles multiples (T-shirt, Power of 2, Custom)
 - [ ] Timer optionnel
 - [ ] Statistiques avancées
@@ -165,7 +165,7 @@ poker-planning/
 ## 📞 Support
 
 Pour toute question ou problème :
-- Ouvrir une [issue GitHub](https://github.com/[username]/poker-planning/issues)
+- Ouvrir une [issue GitHub](https://github.com/menur4/pokerplanning/issues)
 - Consulter la [documentation](./docs/)
 - Contacter l'équipe de développement
 
