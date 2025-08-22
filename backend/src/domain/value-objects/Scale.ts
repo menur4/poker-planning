@@ -38,6 +38,14 @@ export class Scale {
     return this.name;
   }
 
+  getType(): string {
+    // Map known scale names to types
+    if (this.name === 'fibonacci') return 'fibonacci';
+    if (this.name === 'tshirt') return 'tshirt';
+    if (this.name === 'power-of-2') return 'powerOfTwo';
+    return 'custom';
+  }
+
   getValues(): string[] {
     return [...this.values];
   }

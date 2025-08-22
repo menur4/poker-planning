@@ -31,11 +31,11 @@ Permettre aux équipes agiles d'estimer la complexité des user stories de mani�
 - **SOLID** : Respect des principes de conception objet
 - **Clean Code** : Nommage explicite, fonctions pures, responsabilité unique
 
-## 🚀 Démarrage Rapide
+## Installation et Démarrage
 
 ### Prérequis
-- Node.js 18+
-- Redis 7+
+- Node.js 18+ 
+- Redis Server
 - Git
 
 ### Installation
@@ -44,23 +44,66 @@ Permettre aux équipes agiles d'estimer la complexité des user stories de mani�
 git clone https://github.com/menur4/pokerplanning.git
 cd pokerplanning
 
-# Installation des dépendances
-npm run install:all
+# Installation des dépendances backend
+cd backend
+npm install
 
-# Démarrage en développement
+# Configuration de l'environnement
+cp .env.example .env
+# Éditer .env avec vos paramètres Redis
+
+# Démarrage du serveur de développement
 npm run dev
 ```
 
-### Scripts Disponibles
+### Configuration Redis
+Assurez-vous que Redis est installé et en cours d'exécution :
 ```bash
-npm run dev              # Démarrage développement (frontend + backend)
-npm run test             # Tests unitaires
-npm run test:integration # Tests d'intégration
-npm run test:e2e         # Tests end-to-end
-npm run build            # Build production
-npm run lint             # Vérification code
-npm run format           # Formatage code
+# Installation Redis (macOS)
+brew install redis
+brew services start redis
+
+# Installation Redis (Ubuntu)
+sudo apt-get install redis-server
+sudo systemctl start redis-server
+
+# Vérification
+redis-cli ping
+# Doit retourner "PONG"
 ```
+
+### Scripts Disponibles (Backend)
+```bash
+npm run dev              # Démarrage développement avec hot-reload
+npm run build            # Build production TypeScript
+npm run start            # Démarrage production
+npm run test             # Tests unitaires et intégration
+npm run test:watch       # Tests en mode watch
+npm run test:coverage    # Tests avec couverture de code
+npm run lint             # Vérification ESLint
+npm run format           # Formatage Prettier
+```
+
+### API Endpoints
+Une fois le serveur démarré, l'API est accessible sur `http://localhost:3001` :
+
+#### Sessions
+- `POST /api/v1/sessions` - Créer une session
+- `GET /api/v1/sessions/:id` - Obtenir les détails d'une session
+- `POST /api/v1/sessions/:id/join` - Rejoindre une session
+- `GET /api/v1/users/:creatorId/sessions` - Lister les sessions d'un utilisateur
+
+#### Votes
+- `POST /api/v1/sessions/:id/voting/start` - Démarrer un vote
+- `POST /api/v1/sessions/:id/voting/vote` - Soumettre un vote
+- `POST /api/v1/sessions/:id/voting/reveal` - Révéler les votes
+
+#### WebSocket Events
+Communication temps réel via Socket.io :
+- `session:join` - Rejoindre une session
+- `voting:start` - Démarrer un vote
+- `vote:submit` - Soumettre un vote
+- `votes:reveal` - Révéler les résultats
 
 ## 📋 Roadmap
 
@@ -69,8 +112,10 @@ npm run format           # Formatage code
 - [x] Modèles de domaine (Session, Participant, Vote, VotingRound)
 - [x] Value Objects (SessionId, Scale, VoteValue)
 - [x] Cas d'usage (CreateSession, JoinSession, StartVoting, SubmitVote, RevealVotes)
-- [x] Tests unitaires (221 tests passants)
-- [ ] API REST et WebSocket
+- [x] Tests unitaires (238 tests passants)
+- [x] API REST avec Express
+- [x] WebSocket avec Socket.io
+- [x] Repository Redis pour persistance
 - [ ] Interface utilisateur responsive
 - [ ] Système de vote avec échelle Fibonacci
 
