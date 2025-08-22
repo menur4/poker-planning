@@ -138,6 +138,7 @@ poker-planning/
 - **Commits** : Convention Conventional Commits
 - **Code** : ESLint + Prettier
 - **Tests** : TDD obligatoire pour nouvelles fonctionnalités
+- **Documentation** : Mise à jour obligatoire avant chaque commit
 - **Review** : Approbation requise avant merge
 
 ## 📊 Monitoring

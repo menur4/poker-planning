@@ -306,7 +306,8 @@ jobs:
 - [ ] Couverture de code > 90%
 - [ ] Respect des principes SOLID
 - [ ] Nommage explicite et métier
-- [ ] Documentation des cas d'usage
+- [ ] **Documentation fonctionnelle mise à jour**
+- [ ] **Documentation technique mise à jour**
 - [ ] Tests d'intégration
 - [ ] Validation des types TypeScript
 - [ ] Code review approuvé
@@ -316,7 +317,9 @@ jobs:
 - [ ] Performance validée
 - [ ] Accessibilité vérifiée
 - [ ] Compatibilité navigateurs
-- [ ] Documentation mise à jour
+- [ ] **Documentation complète synchronisée**
+- [ ] **README.md actualisé**
+- [ ] **CHANGELOG.md mis à jour**
 - [ ] Métriques de monitoring
 
 ## 🎨 Standards UI/UX
@@ -363,6 +366,58 @@ jobs:
 - **Participants** : Moyenne par session
 - **Votes complétés** : Taux de completion
 - **Temps de session** : Durée moyenne
+
+## 📝 Consignes de Documentation
+
+### Règle Fondamentale
+**OBLIGATOIRE** : Mettre à jour la documentation avant chaque commit
+
+### Documentation à Maintenir
+
+#### 1. Documentation Fonctionnelle
+- **README.md** : Vue d'ensemble, fonctionnalités, installation
+- **poker_planning_brief.md** : Spécifications métier
+- **USER_GUIDE.md** : Guide utilisateur (à créer)
+- **CHANGELOG.md** : Historique des versions (à créer)
+
+#### 2. Documentation Technique
+- **IMPLEMENTATION_PLAN.md** : Architecture et plan technique
+- **API_DOCUMENTATION.md** : Documentation API (à créer)
+- **DEPLOYMENT.md** : Guide de déploiement (à créer)
+- **Commentaires code** : JSDoc pour fonctions complexes
+
+#### 3. Documentation de Suivi
+- **PROJECT_TRACKING.md** : Avancement et métriques
+- **DECISIONS.md** : Décisions architecturales (à créer)
+- **TROUBLESHOOTING.md** : Guide de résolution (à créer)
+
+### Workflow Documentation
+
+#### Avant chaque Commit
+1. **Vérifier** que les changements sont documentés
+2. **Mettre à jour** les fichiers concernés :
+   - README.md si nouvelles fonctionnalités
+   - IMPLEMENTATION_PLAN.md si changements architecture
+   - PROJECT_TRACKING.md si milestone atteint
+   - API_DOCUMENTATION.md si nouveaux endpoints
+3. **Valider** la cohérence entre code et documentation
+4. **Tester** les exemples de documentation
+
+#### Standards de Documentation
+- **Clarté** : Langage simple et précis
+- **Exemples** : Code samples fonctionnels
+- **Structure** : Markdown avec hiérarchie claire
+- **Liens** : Navigation entre documents
+- **Mise à jour** : Date de dernière modification
+
+### Checklist Documentation
+- [ ] README.md reflète les nouvelles fonctionnalités
+- [ ] Code complexe commenté avec JSDoc
+- [ ] API endpoints documentés avec exemples
+- [ ] Changements architecturaux expliqués
+- [ ] Guide utilisateur actualisé
+- [ ] Métriques de suivi mises à jour
+- [ ] Liens internes fonctionnels
 
 ---
 

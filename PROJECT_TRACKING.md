@@ -135,7 +135,7 @@
 | Taux achèvement votes | >90% | - | 🔄 |
 | Support participants | 50 | - | 🔄 |
 
-## 🎨 Standards de Qualité
+## Standards de Qualité
 
 ### Clean Code Principles
 - **Nommage** : Noms explicites et métier
@@ -147,10 +147,17 @@
 ### Git Workflow
 - **Branches** : feature/*, bugfix/*, hotfix/*
 - **Commits** : Conventional Commits
+- **Documentation** : Mise à jour obligatoire avant commit
 - **PR** : Code review obligatoire + tests passants
 - **CI/CD** : Tests automatiques + déploiement
 
-## 🔧 Configuration Développement
+### Règles de Documentation
+- **Avant chaque commit** : Vérifier et mettre à jour la documentation
+- **Cohérence** : Code et documentation synchronisés
+- **Complétude** : Nouvelles fonctionnalités documentées
+- **Qualité** : Exemples fonctionnels et clairs
+
+## Configuration Développement
 
 ### Prérequis
 - Node.js 18+
