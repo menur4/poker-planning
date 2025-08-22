@@ -3,7 +3,7 @@ import { ApiService } from '../services/api';
 import type { CreateSessionRequest } from '../types';
 
 interface CreateSessionProps {
-  onSessionCreated: (sessionId: string) => void;
+  onSessionCreated: (sessionId: string, creatorName: string) => void;
 }
 
 const SCALE_OPTIONS = [
@@ -39,7 +39,7 @@ export function CreateSession({ onSessionCreated }: CreateSessionProps) {
         scale: formData.scale
       });
       
-      onSessionCreated(sessionId);
+      onSessionCreated(sessionId, formData.creatorName);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erreur lors de la création de la session');
     } finally {

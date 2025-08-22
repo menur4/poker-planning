@@ -36,10 +36,17 @@ export class ApiService {
   }
 
   static async getSession(sessionId: string): Promise<Session> {
-    const response: AxiosResponse<ApiResponse<Session>> = await api.get(
-      `/sessions/${sessionId}`
-    );
-    return response.data.data;
+    console.log('API: Getting session:', sessionId);
+    try {
+      const response: AxiosResponse<ApiResponse<Session>> = await api.get(
+        `/sessions/${sessionId}`
+      );
+      console.log('API: Session response:', response.data);
+      return response.data.data;
+    } catch (error) {
+      console.error('API: Failed to get session:', error);
+      throw error;
+    }
   }
 
   static async joinSession(

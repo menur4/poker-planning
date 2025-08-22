@@ -3,6 +3,7 @@ import { CreateSession } from './components/CreateSession';
 import { JoinSession } from './components/JoinSession';
 import { VotingInterface } from './components/VotingInterface';
 import { useSession } from './hooks/useSession';
+import './App.css';
 
 type AppState = 'home' | 'create' | 'join' | 'session';
 
@@ -10,8 +11,27 @@ function App() {
   const [appState, setAppState] = useState<AppState>('home');
   const [sessionId, setSessionId] = useState<string>('');
   const [participantId, setParticipantId] = useState<string>('');
+  const [creatorName, setCreatorName] = useState<string>('');
   
-  const { session, currentParticipant, startVoting, submitVote, revealVotes, error } = useSession(sessionId);
+  const { session, currentParticipant, startVoting, submitVote, revealVotes, error, loading } = useSession(sessionId);
+
+  // Debug logging
+  console.log('App state:', { appState, sessionId, session, currentParticipant, error });
+
+  // Simple test render first
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="card max-w-md">
+          <h1 className="text-xl font-bold text-red-600 mb-2">Erreur</h1>
+          <p className="text-gray-700">{error}</p>
+          <button onClick={handleBackToHome} className="btn-primary mt-4">
+            Retour à l'accueil
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   // Handle URL parameters for direct session access
   useEffect(() => {
@@ -24,8 +44,9 @@ function App() {
     }
   }, []);
 
-  const handleSessionCreated = (newSessionId: string) => {
+  const handleSessionCreated = (newSessionId: string, creatorName: string) => {
     setSessionId(newSessionId);
+    setCreatorName(creatorName);
     setAppState('join');
     
     // Update URL
@@ -35,6 +56,7 @@ function App() {
   };
 
   const handleJoined = (newParticipantId: string) => {
+    console.log('Participant joined:', newParticipantId);
     setParticipantId(newParticipantId);
     setAppState('session');
   };
@@ -43,6 +65,7 @@ function App() {
     setAppState('home');
     setSessionId('');
     setParticipantId('');
+    setCreatorName('');
     
     // Clear URL
     window.history.pushState({}, '', window.location.pathname);
@@ -54,6 +77,7 @@ function App() {
     navigator.clipboard.writeText(url.toString());
   };
 
+  // Test simple render first
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -72,7 +96,7 @@ function App() {
             {sessionId && appState !== 'home' && (
               <div className="flex items-center space-x-4">
                 <div className="text-sm text-gray-600">
-                  Session: <span className="font-mono">{sessionId.split('-')[1]}</span>
+                  Session: <span className="font-mono">{sessionId.slice(-8)}</span>
                 </div>
                 <button
                   onClick={copySessionLink}
@@ -164,10 +188,14 @@ function App() {
         )}
 
         {appState === 'join' && sessionId && (
-          <JoinSession sessionId={sessionId} onJoined={handleJoined} />
+          <JoinSession 
+            sessionId={sessionId} 
+            onJoined={handleJoined} 
+            defaultName={creatorName}
+          />
         )}
 
-        {appState === 'session' && session && currentParticipant && (
+        {appState === 'session' && session && currentParticipant ? (
           <VotingInterface
             session={session}
             currentParticipant={currentParticipant}
@@ -175,7 +203,30 @@ function App() {
             onSubmitVote={submitVote}
             onRevealVotes={revealVotes}
           />
-        )}
+        ) : appState === 'session' ? (
+          <div className="max-w-2xl mx-auto">
+            <div className="card text-center">
+              <h2 className="text-xl font-bold text-gray-900 mb-4">Chargement...</h2>
+              <p className="text-gray-600">
+                Chargement de la session et des données participant...
+              </p>
+              <div className="mt-4">
+                <p className="text-sm text-gray-500">
+                  Debug: appState={appState}, sessionId={sessionId}, session={session ? 'loaded' : 'null'}, currentParticipant={currentParticipant ? 'loaded' : 'null'}
+                </p>
+                <p className="text-xs text-gray-400 mt-2">
+                  Session data: {session ? JSON.stringify({id: session.id, creatorId: session.creatorId, participants: session.participants?.length}) : 'null'}
+                </p>
+                <p className="text-xs text-red-500 mt-2">
+                  Error: {error || 'No error'}
+                </p>
+                <p className="text-xs text-blue-500 mt-2">
+                  Loading: {loading ? 'true' : 'false'}
+                </p>
+              </div>
+            </div>
+          </div>
+        ) : null}
       </main>
 
       {/* Footer */}
@@ -191,3 +242,16 @@ function App() {
 }
 
 export default App;
+
+// Simple test component to verify rendering
+export function TestApp() {
+  return (
+    <div style={{ padding: '20px', fontFamily: 'Arial, sans-serif' }}>
+      <h1>Test Poker Planning</h1>
+      <p>Si vous voyez ce message, React fonctionne !</p>
+      <button style={{ padding: '10px', backgroundColor: '#2563eb', color: 'white', border: 'none', borderRadius: '5px' }}>
+        Test Button
+      </button>
+    </div>
+  );
+}

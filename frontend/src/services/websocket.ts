@@ -42,8 +42,8 @@ export class WebSocketService {
   }
 
   // Session events
-  joinSession(sessionId: string, participantId: string): void {
-    this.socket?.emit('session:join', { sessionId, participantId });
+  joinSession(sessionId: string, participantName: string, role: 'participant' | 'spectator'): void {
+    this.socket?.emit('session:join', { sessionId, participantName, role });
   }
 
   leaveSession(sessionId: string, participantId: string): void {

@@ -5,11 +5,12 @@ import type { JoinSessionRequest } from '../types';
 interface JoinSessionProps {
   sessionId: string;
   onJoined: (participantId: string) => void;
+  defaultName?: string;
 }
 
-export function JoinSession({ sessionId, onJoined }: JoinSessionProps) {
+export function JoinSession({ sessionId, onJoined, defaultName }: JoinSessionProps) {
   const [formData, setFormData] = useState({
-    participantName: '',
+    participantName: defaultName || '',
     role: 'participant' as 'participant' | 'spectator'
   });
   const [error, setError] = useState<string | null>(null);

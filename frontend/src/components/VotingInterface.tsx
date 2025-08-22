@@ -25,6 +25,21 @@ export function VotingInterface({
   const hasActiveVoting = session.isVotingActive && session.currentVote;
   const votingRevealed = session.currentVote?.status === 'revealed';
 
+  // Debug logging
+  console.log('VotingInterface state:', {
+    isCreator,
+    canVote,
+    hasActiveVoting,
+    votingRevealed,
+    sessionIsVotingActive: session.isVotingActive,
+    currentVote: session.currentVote,
+    currentParticipant,
+    session,
+    creatorId: session.creatorId,
+    participantId: currentParticipant.id,
+    comparison: currentParticipant.id === session.creatorId
+  });
+
   const handleStartVoting = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newQuestion.trim()) return;
@@ -128,8 +143,11 @@ export function VotingInterface({
 
       {/* Start Voting (Creator only) */}
       {isCreator && !hasActiveVoting && (
-        <div className="card">
-          <h3 className="font-medium text-gray-900 mb-3">Démarrer un vote</h3>
+        <div className="card bg-blue-50 border-blue-200">
+          <h3 className="font-medium text-gray-900 mb-3">⚡ Démarrer un vote</h3>
+          <p className="text-sm text-gray-600 mb-4">
+            En tant que créateur, vous devez démarrer un vote pour que les participants puissent voter.
+          </p>
           <form onSubmit={handleStartVoting} className="space-y-3">
             <input
               type="text"
@@ -145,7 +163,7 @@ export function VotingInterface({
               disabled={loading || !newQuestion.trim()}
               className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? 'Démarrage...' : 'Démarrer le vote'}
+              {loading ? 'Démarrage...' : '🚀 Démarrer le vote'}
             </button>
           </form>
         </div>
@@ -168,8 +186,8 @@ export function VotingInterface({
 
           {/* Voting Cards */}
           {canVote && !votingRevealed && (
-            <div className="mb-4">
-              <h4 className="font-medium text-gray-700 mb-3">Votre vote:</h4>
+            <div className="mb-4 bg-green-50 border-green-200 p-4 rounded-lg">
+              <h4 className="font-medium text-gray-700 mb-3">🗳️ Votre vote:</h4>
               <div className="grid grid-cols-5 gap-2">
                 {session.scale.values.map(value => (
                   <button
@@ -186,6 +204,11 @@ export function VotingInterface({
                   </button>
                 ))}
               </div>
+              {selectedVote && (
+                <p className="text-sm text-green-700 mt-2">
+                  ✅ Vous avez voté: <strong>{selectedVote}</strong>
+                </p>
+              )}
             </div>
           )}
 

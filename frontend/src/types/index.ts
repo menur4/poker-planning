@@ -89,7 +89,7 @@ export interface RevealVotesRequest {
 // WebSocket Events
 export interface SocketEvents {
   // Client to Server
-  'session:join': { sessionId: string; participantId: string };
+  'session:join': { sessionId: string; participantName: string; role: 'participant' | 'spectator' };
   'session:leave': { sessionId: string; participantId: string };
   'voting:start': StartVotingRequest & { sessionId: string };
   'vote:submit': SubmitVoteRequest & { sessionId: string };

@@ -20,6 +20,9 @@ export function useSession(sessionId?: string): UseSessionReturn {
   const [error, setError] = useState<string | null>(null);
   const [currentParticipant, setCurrentParticipant] = useState<Participant | null>(null);
 
+  // Debug logging
+  console.log('useSession hook state:', { sessionId, session, currentParticipant, loading, error });
+
   // Load session data
   const loadSession = useCallback(async (id: string) => {
     if (!id) return;
@@ -28,9 +31,22 @@ export function useSession(sessionId?: string): UseSessionReturn {
     setError(null);
     
     try {
+      console.log('Loading session:', id);
       const sessionData = await ApiService.getSession(id);
+      console.log('Session loaded:', sessionData);
       setSession(sessionData);
+      
+      // Try to restore current participant after session is loaded
+      const storedParticipantId = localStorage.getItem(`participant_${id}`);
+      if (storedParticipantId && sessionData.participants) {
+        const participant = sessionData.participants.find(p => p.id === storedParticipantId);
+        if (participant) {
+          console.log('Restored participant from localStorage:', participant);
+          setCurrentParticipant(participant);
+        }
+      }
     } catch (err) {
+      console.error('Failed to load session:', err);
       setError(err instanceof Error ? err.message : 'Failed to load session');
     } finally {
       setLoading(false);
@@ -51,7 +67,7 @@ export function useSession(sessionId?: string): UseSessionReturn {
       
       // Connect to WebSocket
       const socket = websocketService.connect();
-      websocketService.joinSession(sessionId, result.participantId);
+      websocketService.joinSession(sessionId, participantName, role);
 
       // Set current participant
       setCurrentParticipant({
@@ -61,7 +77,11 @@ export function useSession(sessionId?: string): UseSessionReturn {
         isConnected: true
       });
 
+      // Store participant ID in localStorage for persistence
+      localStorage.setItem(`participant_${sessionId}`, result.participantId);
+
       // Load updated session
+      console.log('Loading session after join:', sessionId);
       await loadSession(sessionId);
 
       return result.participantId;
@@ -126,6 +146,15 @@ export function useSession(sessionId?: string): UseSessionReturn {
     // Session updates
     websocketService.onSessionUpdated(({ session: updatedSession }) => {
       setSession(updatedSession);
+      
+      // Update current participant if we have a participantId stored
+      const storedParticipantId = localStorage.getItem(`participant_${sessionId}`);
+      if (storedParticipantId && updatedSession?.participants) {
+        const participant = updatedSession.participants.find(p => p.id === storedParticipantId);
+        if (participant) {
+          setCurrentParticipant(participant);
+        }
+      }
     });
 
     // Participant events
@@ -190,6 +219,7 @@ export function useSession(sessionId?: string): UseSessionReturn {
     });
 
     // Load initial session data
+    console.log('Loading initial session data for:', sessionId);
     loadSession(sessionId);
 
     // Cleanup
