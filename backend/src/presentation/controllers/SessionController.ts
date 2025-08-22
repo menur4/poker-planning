@@ -19,16 +19,16 @@ export class SessionController {
 
   async createSession(req: Request, res: Response): Promise<void> {
     try {
-      const { name, scale, creatorId } = req.body;
+      const { sessionName, scale, creatorName } = req.body;
 
-      if (!name || !scale || !creatorId) {
+      if (!sessionName || !scale || !creatorName) {
         res.status(400).json({
-          error: 'Missing required fields: name, scale, creatorId'
+          error: 'Missing required fields: sessionName, scale, creatorName'
         });
         return;
       }
 
-      const command = { name, scale, creatorId };
+      const command = { name: sessionName, scale, creatorId: creatorName };
       const result = await this.createSessionUseCase.execute(command);
 
       res.status(201).json({
