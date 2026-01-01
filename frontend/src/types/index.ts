@@ -23,7 +23,7 @@ export interface Participant {
 
 export interface VotingRound {
   question: string;
-  status: 'active' | 'revealed' | 'finished';
+  status: 'voting' | 'revealed' | 'finished';  // Fixed: backend uses 'voting', not 'active'
   startedAt: string;
   voteCount: number;
   votes?: Vote[];
@@ -38,10 +38,14 @@ export interface Vote {
 }
 
 export interface VoteStatistics {
+  totalVotes: number;
   average: number;
   median: number;
   mode: string[];
   distribution: Record<string, number>;
+  minVote: string;
+  maxVote: string;
+  consensus: boolean;
 }
 
 // API Request/Response types
@@ -86,6 +90,10 @@ export interface RevealVotesRequest {
   initiatorId: string;
 }
 
+export interface FinishVotingRequest {
+  initiatorId: string;
+}
+
 // WebSocket Events
 export interface SocketEvents {
   // Client to Server
@@ -104,20 +112,3 @@ export interface SocketEvents {
   'votes:revealed': { results: VotingRound };
   'error': { message: string };
 }
-
-// Re-export all types for convenience
-export type {
-  Session,
-  Participant,
-  VotingRound,
-  Vote,
-  VoteStatistics,
-  CreateSessionRequest,
-  CreateSessionResponse,
-  JoinSessionRequest,
-  JoinSessionResponse,
-  StartVotingRequest,
-  SubmitVoteRequest,
-  RevealVotesRequest,
-  SocketEvents
-};

@@ -9,6 +9,7 @@ import { JoinSessionUseCase } from './application/use-cases/JoinSession';
 import { StartVotingUseCase } from './application/use-cases/StartVoting';
 import { SubmitVoteUseCase } from './application/use-cases/SubmitVote';
 import { RevealVotesUseCase } from './application/use-cases/RevealVotes';
+import { FinishVotingUseCase } from './application/use-cases/FinishVoting';
 import { RedisSessionRepository } from './infrastructure/repositories/RedisSessionRepository';
 import { SocketManager } from './infrastructure/websocket/SocketManager';
 
@@ -27,6 +28,7 @@ export class App {
   private server: Server | null = null;
   private sessionRepository: RedisSessionRepository;
   private socketManager: SocketManager | null = null;
+  private sessionController: SessionController | null = null;
 
   constructor(private config: AppConfig) {
     this.app = express();
@@ -69,19 +71,21 @@ export class App {
     const startVotingUseCase = new StartVotingUseCase(this.sessionRepository);
     const submitVoteUseCase = new SubmitVoteUseCase(this.sessionRepository);
     const revealVotesUseCase = new RevealVotesUseCase(this.sessionRepository);
+    const finishVotingUseCase = new FinishVotingUseCase(this.sessionRepository);
 
-    // Create controller
-    const sessionController = new SessionController(
+    // Create controller and store reference
+    this.sessionController = new SessionController(
       createSessionUseCase,
       joinSessionUseCase,
       startVotingUseCase,
       submitVoteUseCase,
       revealVotesUseCase,
+      finishVotingUseCase,
       this.sessionRepository
     );
 
     // Setup routes
-    this.app.use('/api/v1', createSessionRoutes(sessionController));
+    this.app.use('/api/v1', createSessionRoutes(this.sessionController));
 
     // API documentation endpoint
     this.app.get('/api/v1/docs', (req, res) => {
@@ -149,6 +153,11 @@ export class App {
       submitVoteUseCase,
       revealVotesUseCase
     );
+
+    // Inject SocketManager into SessionController
+    if (this.sessionController) {
+      this.sessionController.setSocketManager(this.socketManager);
+    }
   }
 
   async stop(): Promise<void> {

@@ -82,7 +82,7 @@ describe('RevealVotes Use Case', () => {
       // Arrange
       const command = {
         sessionId: sessionId.getValue(),
-        initiatorId: creatorId
+        initiatorId: 'p1' // Use participant ID
       };
 
       // Act
@@ -113,7 +113,7 @@ describe('RevealVotes Use Case', () => {
       // Arrange
       const command = {
         sessionId: sessionId.getValue(),
-        initiatorId: creatorId
+        initiatorId: 'p1' // Use participant ID
       };
 
       // Act
@@ -122,7 +122,10 @@ describe('RevealVotes Use Case', () => {
       // Assert
       expect(result.statistics).toBeDefined();
       expect(result.statistics.totalVotes).toBe(2);
-      expect(result.statistics.averageVote).toBe(6.5); // (5 + 8) / 2
+      expect(result.statistics.average).toBe(6.5); // (5 + 8) / 2
+      expect(result.statistics.median).toBe(6.5); // (5 + 8) / 2
+      expect(result.statistics.mode).toEqual(['5', '8']); // Both have same frequency
+      expect(result.statistics.distribution).toEqual({ '5': 1, '8': 1 });
       expect(result.statistics.minVote).toBe('5');
       expect(result.statistics.maxVote).toBe('8');
       expect(result.statistics.consensus).toBe(false); // Different votes
@@ -143,7 +146,7 @@ describe('RevealVotes Use Case', () => {
       
       const command = {
         sessionId: sessionId.getValue(),
-        initiatorId: creatorId
+        initiatorId: 'p1' // Use participant ID
       };
 
       // Act
@@ -151,7 +154,10 @@ describe('RevealVotes Use Case', () => {
 
       // Assert
       expect(result.statistics.consensus).toBe(true);
-      expect(result.statistics.averageVote).toBe(5);
+      expect(result.statistics.average).toBe(5);
+      expect(result.statistics.median).toBe(5);
+      expect(result.statistics.mode).toEqual(['5']);
+      expect(result.statistics.distribution).toEqual({ '5': 2 });
       expect(result.statistics.minVote).toBe('5');
       expect(result.statistics.maxVote).toBe('5');
     });
@@ -173,7 +179,7 @@ describe('RevealVotes Use Case', () => {
       
       const command = {
         sessionId: sessionId.getValue(),
-        initiatorId: creatorId
+        initiatorId: 'p1' // Use participant ID
       };
 
       // Act
@@ -181,7 +187,8 @@ describe('RevealVotes Use Case', () => {
 
       // Assert
       expect(result.statistics.totalVotes).toBe(3);
-      expect(result.statistics.averageVote).toBe(5); // Only numeric votes counted
+      expect(result.statistics.average).toBe(5); // Only numeric votes counted
+      expect(result.statistics.distribution).toEqual({ '5': 1, 'ABSTAIN': 1, '?': 1 });
       expect(result.statistics.minVote).toBe('5');
       expect(result.statistics.maxVote).toBe('5');
       expect(result.statistics.consensus).toBe(false); // Different vote types
@@ -191,7 +198,7 @@ describe('RevealVotes Use Case', () => {
       // Arrange
       const command = {
         sessionId: sessionId.getValue(),
-        initiatorId: creatorId
+        initiatorId: 'p1' // Use participant ID
       };
 
       // Act
@@ -231,7 +238,7 @@ describe('RevealVotes Use Case', () => {
       const nonExistentId = SessionId.generate().getValue();
       const command = {
         sessionId: nonExistentId,
-        initiatorId: creatorId
+        initiatorId: 'p1' // Use participant ID
       };
 
       // Act & Assert
@@ -245,7 +252,7 @@ describe('RevealVotes Use Case', () => {
       
       const command = {
         sessionId: sessionId.getValue(),
-        initiatorId: creatorId
+        initiatorId: 'p1' // Use participant ID
       };
 
       // Act & Assert
@@ -259,7 +266,7 @@ describe('RevealVotes Use Case', () => {
       
       const command = {
         sessionId: sessionId.getValue(),
-        initiatorId: creatorId
+        initiatorId: 'p1' // Use participant ID
       };
 
       // Act & Assert
@@ -273,7 +280,7 @@ describe('RevealVotes Use Case', () => {
       
       const command = {
         sessionId: sessionId.getValue(),
-        initiatorId: creatorId
+        initiatorId: 'p1' // Use participant ID
       };
 
       // Act & Assert
@@ -295,7 +302,7 @@ describe('RevealVotes Use Case', () => {
       
       const command = {
         sessionId: emptySession.getId().getValue(),
-        initiatorId: 'creator-456'
+        initiatorId: 'p1' // Use participant ID
       };
 
       // Act
@@ -305,7 +312,10 @@ describe('RevealVotes Use Case', () => {
       expect(result.success).toBe(true);
       expect(result.votes).toHaveLength(0);
       expect(result.statistics.totalVotes).toBe(0);
-      expect(result.statistics.averageVote).toBe(0);
+      expect(result.statistics.average).toBe(0);
+      expect(result.statistics.median).toBe(0);
+      expect(result.statistics.mode).toEqual([]);
+      expect(result.statistics.distribution).toEqual({});
       expect(result.statistics.consensus).toBe(true); // No votes = consensus
     });
 
@@ -313,7 +323,7 @@ describe('RevealVotes Use Case', () => {
       // Arrange
       const command = {
         sessionId: '',
-        initiatorId: creatorId
+        initiatorId: 'p1' // Use participant ID
       };
 
       // Act & Assert
@@ -346,7 +356,7 @@ describe('RevealVotes Use Case', () => {
       // Arrange
       const command = {
         sessionId: sessionId.getValue(),
-        initiatorId: creatorId
+        initiatorId: 'p1' // Use participant ID
       };
 
       // Mock repository to throw error on save

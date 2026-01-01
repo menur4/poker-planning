@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { CreateSession } from './components/CreateSession';
 import { JoinSession } from './components/JoinSession';
 import { VotingInterface } from './components/VotingInterface';
+import { Toast } from './components/Toast';
 import { useSession } from './hooks/useSession';
 import './App.css';
 
@@ -10,15 +11,20 @@ type AppState = 'home' | 'create' | 'join' | 'session';
 function App() {
   const [appState, setAppState] = useState<AppState>('home');
   const [sessionId, setSessionId] = useState<string>('');
-  const [participantId, setParticipantId] = useState<string>('');
   const [creatorName, setCreatorName] = useState<string>('');
-  
-  const { session, currentParticipant, startVoting, submitVote, revealVotes, error, loading } = useSession(sessionId);
+  const [showToast, setShowToast] = useState(false);
 
-  // Debug logging
-  console.log('App state:', { appState, sessionId, session, currentParticipant, error });
+  const { session, currentParticipant, joinSession, startVoting, submitVote, revealVotes, finishVoting, error } = useSession(sessionId);
 
-  // Simple test render first
+  const handleBackToHome = () => {
+    setAppState('home');
+    setSessionId('');
+    setCreatorName('');
+
+    // Clear URL
+    window.history.pushState({}, '', window.location.pathname);
+  };
+
   if (error) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -37,44 +43,47 @@ function App() {
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const urlSessionId = urlParams.get('session');
-    
+
     if (urlSessionId) {
       setSessionId(urlSessionId);
       setAppState('join');
     }
   }, []);
 
-  const handleSessionCreated = (newSessionId: string, creatorName: string) => {
+  // Auto-transition to session view if we have both session and currentParticipant
+  // Use a more stable check to avoid re-renders during component lifecycle
+  useEffect(() => {
+    if (appState === 'join' && session && currentParticipant && sessionId) {
+      console.log('Auto-transitioning to session view - session and participant loaded');
+      // Use setTimeout to avoid state updates during render
+      const timer = setTimeout(() => {
+        setAppState('session');
+      }, 0);
+      return () => clearTimeout(timer);
+    }
+  }, [appState, session, currentParticipant, sessionId]);
+
+  const handleSessionCreated = (newSessionId: string, creatorName: string, participantId: string) => {
     setSessionId(newSessionId);
     setCreatorName(creatorName);
-    setAppState('join');
-    
+    // Go directly to session since we auto-joined
+    setAppState('session');
+
     // Update URL
     const url = new URL(window.location.href);
     url.searchParams.set('session', newSessionId);
     window.history.pushState({}, '', url.toString());
   };
 
-  const handleJoined = (newParticipantId: string) => {
-    console.log('Participant joined:', newParticipantId);
-    setParticipantId(newParticipantId);
+  const handleJoined = (_newParticipantId: string) => {
     setAppState('session');
-  };
-
-  const handleBackToHome = () => {
-    setAppState('home');
-    setSessionId('');
-    setParticipantId('');
-    setCreatorName('');
-    
-    // Clear URL
-    window.history.pushState({}, '', window.location.pathname);
   };
 
   const copySessionLink = () => {
     const url = new URL(window.location.href);
     url.searchParams.set('session', sessionId);
     navigator.clipboard.writeText(url.toString());
+    setShowToast(true);
   };
 
   // Test simple render first
@@ -122,7 +131,7 @@ function App() {
           <div className="text-center">
             <div className="max-w-2xl mx-auto mb-8">
               <h1 className="text-4xl font-bold text-gray-900 mb-4">
-                Poker Planning Collaboratif
+                Poker Planning
               </h1>
               <p className="text-lg text-gray-600 mb-8">
                 Estimez vos user stories en équipe avec des sessions de vote en temps réel
@@ -134,7 +143,7 @@ function App() {
                 <div className="text-4xl mb-4">🎯</div>
                 <h3 className="text-lg font-semibold mb-2">Créer une session</h3>
                 <p className="text-gray-600 mb-4">
-                  Lancez une nouvelle session de poker planning
+                  Lancez une nouvelle session d'éstimation
                 </p>
                 <button
                   onClick={() => setAppState('create')}
@@ -184,13 +193,14 @@ function App() {
         )}
 
         {appState === 'create' && (
-          <CreateSession onSessionCreated={handleSessionCreated} />
+          <CreateSession onSessionCreated={handleSessionCreated} onJoinSession={joinSession} />
         )}
 
         {appState === 'join' && sessionId && (
-          <JoinSession 
-            sessionId={sessionId} 
-            onJoined={handleJoined} 
+          <JoinSession
+            sessionId={sessionId}
+            onJoined={handleJoined}
+            joinSession={joinSession}
             defaultName={creatorName}
           />
         )}
@@ -202,28 +212,15 @@ function App() {
             onStartVoting={startVoting}
             onSubmitVote={submitVote}
             onRevealVotes={revealVotes}
+            onFinishVoting={finishVoting}
           />
         ) : appState === 'session' ? (
           <div className="max-w-2xl mx-auto">
             <div className="card text-center">
               <h2 className="text-xl font-bold text-gray-900 mb-4">Chargement...</h2>
               <p className="text-gray-600">
-                Chargement de la session et des données participant...
+                Chargement de la session en cours...
               </p>
-              <div className="mt-4">
-                <p className="text-sm text-gray-500">
-                  Debug: appState={appState}, sessionId={sessionId}, session={session ? 'loaded' : 'null'}, currentParticipant={currentParticipant ? 'loaded' : 'null'}
-                </p>
-                <p className="text-xs text-gray-400 mt-2">
-                  Session data: {session ? JSON.stringify({id: session.id, creatorId: session.creatorId, participants: session.participants?.length}) : 'null'}
-                </p>
-                <p className="text-xs text-red-500 mt-2">
-                  Error: {error || 'No error'}
-                </p>
-                <p className="text-xs text-blue-500 mt-2">
-                  Loading: {loading ? 'true' : 'false'}
-                </p>
-              </div>
             </div>
           </div>
         ) : null}
@@ -233,25 +230,25 @@ function App() {
       <footer className="bg-white border-t mt-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="text-center text-gray-500 text-sm">
-            <p>Poker Planning App - Développé avec React + TypeScript</p>
+            <p className="flex items-center justify-center gap-1">
+              Développé avec ❤️ &
+              <img src="/claude-code.png" alt="Claude Code" className="inline-block w-5 h-5" />
+              pour l'équipe CLIC
+            </p>
           </div>
         </div>
       </footer>
+
+      {/* Toast notification */}
+      {showToast && (
+        <Toast
+          message="Lien copié dans le presse-papiers !"
+          type="success"
+          onClose={() => setShowToast(false)}
+        />
+      )}
     </div>
   );
 }
 
 export default App;
-
-// Simple test component to verify rendering
-export function TestApp() {
-  return (
-    <div style={{ padding: '20px', fontFamily: 'Arial, sans-serif' }}>
-      <h1>Test Poker Planning</h1>
-      <p>Si vous voyez ce message, React fonctionne !</p>
-      <button style={{ padding: '10px', backgroundColor: '#2563eb', color: 'white', border: 'none', borderRadius: '5px' }}>
-        Test Button
-      </button>
-    </div>
-  );
-}

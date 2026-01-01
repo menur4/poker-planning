@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { ApiService } from '../services/api';
-import type { CreateSessionRequest } from '../types';
 
 interface CreateSessionProps {
-  onSessionCreated: (sessionId: string, creatorName: string) => void;
+  onSessionCreated: (sessionId: string, creatorName: string, participantId: string) => void;
+  onJoinSession: (sessionId: string, participantName: string, role: 'participant' | 'spectator') => Promise<string>;
 }
 
 const SCALE_OPTIONS = [
@@ -12,7 +12,7 @@ const SCALE_OPTIONS = [
   { value: 'power-of-2', label: 'Power of 2 (1, 2, 4, 8, 16, 32...)' },
 ];
 
-export function CreateSession({ onSessionCreated }: CreateSessionProps) {
+export function CreateSession({ onSessionCreated, onJoinSession }: CreateSessionProps) {
   const [formData, setFormData] = useState({
     sessionName: '',
     creatorName: '',
@@ -23,7 +23,7 @@ export function CreateSession({ onSessionCreated }: CreateSessionProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!formData.sessionName.trim() || !formData.creatorName.trim()) {
       setError('Veuillez remplir tous les champs requis');
       return;
@@ -33,13 +33,17 @@ export function CreateSession({ onSessionCreated }: CreateSessionProps) {
     setError(null);
 
     try {
+      // Create session
       const sessionId = await ApiService.createSession({
         sessionName: formData.sessionName.trim(),
         creatorName: formData.creatorName.trim(),
         scale: formData.scale
       });
-      
-      onSessionCreated(sessionId, formData.creatorName);
+
+      // Automatically join the session as creator/participant
+      const participantId = await onJoinSession(sessionId, formData.creatorName.trim(), 'participant');
+
+      onSessionCreated(sessionId, formData.creatorName, participantId);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erreur lors de la création de la session');
     } finally {

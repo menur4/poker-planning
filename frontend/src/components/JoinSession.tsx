@@ -1,31 +1,30 @@
 import React, { useState } from 'react';
-import { useSession } from '../hooks/useSession';
-import type { JoinSessionRequest } from '../types';
 
 interface JoinSessionProps {
   sessionId: string;
   onJoined: (participantId: string) => void;
+  joinSession: (sessionId: string, participantName: string, role: 'participant' | 'spectator') => Promise<string>;
   defaultName?: string;
 }
 
-export function JoinSession({ sessionId, onJoined, defaultName }: JoinSessionProps) {
+export function JoinSession({ sessionId, onJoined, joinSession, defaultName }: JoinSessionProps) {
   const [formData, setFormData] = useState({
     participantName: defaultName || '',
     role: 'participant' as 'participant' | 'spectator'
   });
   const [error, setError] = useState<string | null>(null);
-  
-  const { joinSession, loading } = useSession();
+  const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!formData.participantName.trim()) {
       setError('Veuillez entrer votre nom');
       return;
     }
 
     setError(null);
+    setLoading(true);
 
     try {
       const participantId = await joinSession(
@@ -36,6 +35,8 @@ export function JoinSession({ sessionId, onJoined, defaultName }: JoinSessionPro
       onJoined(participantId);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erreur lors de la connexion');
+    } finally {
+      setLoading(false);
     }
   };
 

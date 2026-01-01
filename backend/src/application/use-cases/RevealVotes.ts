@@ -14,7 +14,10 @@ export interface VoteResult {
 
 export interface VotingStatistics {
   totalVotes: number;
-  averageVote: number;
+  average: number;
+  median: number;
+  mode: string[];
+  distribution: Record<string, number>;
   minVote: string;
   maxVote: string;
   consensus: boolean;
@@ -110,41 +113,67 @@ export class RevealVotesUseCase {
   }
 
   private canRevealVotes(session: any, initiatorId: string): boolean {
-    // Session creator can always reveal votes
-    if (session.getCreatorId() === initiatorId) {
-      return true;
-    }
-
     // Check if initiator is a participant (not spectator)
     const participant = session.findParticipant(initiatorId);
-    return participant !== null && participant.canVote();
+    if (!participant) {
+      return false;
+    }
+
+    // Only participants (not spectators) can reveal votes
+    // The creator is also a participant, so they can reveal votes
+    return participant.canVote();
   }
 
   private calculateStatistics(votes: VoteResult[]): VotingStatistics {
     if (votes.length === 0) {
       return {
         totalVotes: 0,
-        averageVote: 0,
+        average: 0,
+        median: 0,
+        mode: [],
+        distribution: {},
         minVote: '',
         maxVote: '',
         consensus: true
       };
     }
 
-    // Filter numeric votes for average calculation
+    // Filter numeric votes for calculations
     const numericVotes = votes
       .map(v => v.voteValue)
       .filter(value => !isNaN(Number(value)) && value !== 'ABSTAIN' && value !== 'COFFEE' && value !== '?')
       .map(value => Number(value));
 
-    const averageVote = numericVotes.length > 0 
-      ? numericVotes.reduce((sum, vote) => sum + vote, 0) / numericVotes.length 
+    // Calculate average
+    const average = numericVotes.length > 0
+      ? numericVotes.reduce((sum, vote) => sum + vote, 0) / numericVotes.length
       : 0;
 
-    // Find min and max from all votes (including special ones)
+    // Calculate median
+    let median = 0;
+    if (numericVotes.length > 0) {
+      const sortedVotes = [...numericVotes].sort((a, b) => a - b);
+      const mid = Math.floor(sortedVotes.length / 2);
+      median = sortedVotes.length % 2 === 0
+        ? (sortedVotes[mid - 1] + sortedVotes[mid]) / 2
+        : sortedVotes[mid];
+    }
+
+    // Calculate distribution (frequency of each vote value)
+    const distribution: Record<string, number> = {};
     const allVoteValues = votes.map(v => v.voteValue);
-    const sortedNumericVotes = numericVotes.sort((a, b) => a - b);
-    
+    allVoteValues.forEach(value => {
+      distribution[value] = (distribution[value] || 0) + 1;
+    });
+
+    // Calculate mode (most frequent vote(s))
+    const maxFrequency = Math.max(...Object.values(distribution));
+    const mode = Object.entries(distribution)
+      .filter(([_, count]) => count === maxFrequency)
+      .map(([value, _]) => value);
+
+    // Find min and max from numeric votes
+    const sortedNumericVotes = [...numericVotes].sort((a, b) => a - b);
     const minVote = sortedNumericVotes.length > 0 ? sortedNumericVotes[0].toString() : allVoteValues[0] || '';
     const maxVote = sortedNumericVotes.length > 0 ? sortedNumericVotes[sortedNumericVotes.length - 1].toString() : allVoteValues[0] || '';
 
@@ -154,7 +183,10 @@ export class RevealVotesUseCase {
 
     return {
       totalVotes: votes.length,
-      averageVote,
+      average,
+      median,
+      mode,
+      distribution,
       minVote,
       maxVote,
       consensus

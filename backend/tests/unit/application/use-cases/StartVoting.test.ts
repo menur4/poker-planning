@@ -75,7 +75,7 @@ describe('StartVoting Use Case', () => {
       const command = {
         sessionId: sessionId.getValue(),
         question: 'How complex is this user story?',
-        initiatorId: creatorId
+        initiatorId: 'p1' // Use participant ID instead of creatorId
       };
 
       // Act
@@ -87,19 +87,24 @@ describe('StartVoting Use Case', () => {
       expect(result.votingParticipants).toHaveLength(2);
       expect(result.votingParticipants.map(p => p.id)).toEqual(['p1', 'p2']);
       expect(result.votingParticipants.map(p => p.name)).toEqual(['John', 'Jane']);
-      
+
       const updatedSession = await mockRepository.findById(sessionId);
       expect(updatedSession!.isVotingActive()).toBe(true);
       expect(updatedSession!.getCurrentVote()?.getQuestion()).toBe(command.question);
       expect(updatedSession!.getCurrentVote()?.getStatus()).toBe('voting');
     });
 
-    it('should allow session creator to start voting', async () => {
+    it('should allow session creator (as participant) to start voting', async () => {
       // Arrange
+      // Add creator as a participant
+      const creatorParticipant = new Participant('creator-p-id', 'Creator', 'participant');
+      session.addParticipant(creatorParticipant);
+      await mockRepository.save(session);
+
       const command = {
         sessionId: sessionId.getValue(),
         question: 'Test question',
-        initiatorId: creatorId
+        initiatorId: 'creator-p-id'
       };
 
       // Act
@@ -153,11 +158,11 @@ describe('StartVoting Use Case', () => {
       // Arrange
       session.deactivate();
       await mockRepository.save(session);
-      
+
       const command = {
         sessionId: sessionId.getValue(),
         question: 'Test question',
-        initiatorId: creatorId
+        initiatorId: 'p1' // Use participant ID
       };
 
       // Act & Assert
@@ -168,11 +173,11 @@ describe('StartVoting Use Case', () => {
       // Arrange
       session.startVoting('First question');
       await mockRepository.save(session);
-      
+
       const command = {
         sessionId: sessionId.getValue(),
         question: 'Second question',
-        initiatorId: creatorId
+        initiatorId: 'p1' // Use participant ID
       };
 
       // Act & Assert
@@ -184,7 +189,7 @@ describe('StartVoting Use Case', () => {
       const command = {
         sessionId: sessionId.getValue(),
         question: '',
-        initiatorId: creatorId
+        initiatorId: 'p1' // Use participant ID
       };
 
       // Act & Assert
@@ -196,7 +201,7 @@ describe('StartVoting Use Case', () => {
       const command = {
         sessionId: sessionId.getValue(),
         question: '   ',
-        initiatorId: creatorId
+        initiatorId: 'p1' // Use participant ID
       };
 
       // Act & Assert
@@ -232,7 +237,7 @@ describe('StartVoting Use Case', () => {
       const command = {
         sessionId: sessionId.getValue(),
         question: '  How complex is this?  ',
-        initiatorId: creatorId
+        initiatorId: 'p1' // Use participant ID
       };
 
       // Act
@@ -240,7 +245,7 @@ describe('StartVoting Use Case', () => {
 
       // Assert
       expect(result.question).toBe('How complex is this?');
-      
+
       const updatedSession = await mockRepository.findById(sessionId);
       expect(updatedSession!.getCurrentVote()?.getQuestion()).toBe('How complex is this?');
     });
@@ -255,20 +260,25 @@ describe('StartVoting Use Case', () => {
         'creator-456'
       );
       const spectator = new Participant('s1', 'Spectator', 'spectator');
+      // Add a participant who can start voting
+      const participant = new Participant('p-creator', 'Creator Participant', 'participant');
       sessionWithSpectators.addParticipant(spectator);
+      sessionWithSpectators.addParticipant(participant);
       mockRepository.addSession(sessionWithSpectators);
-      
+
       const command = {
         sessionId: sessionWithSpectators.getId().getValue(),
         question: 'Test question',
-        initiatorId: 'creator-456'
+        initiatorId: 'p-creator' // Use the participant who can vote
       };
 
       // Act
       const result = await useCase.execute(command);
 
       // Assert
-      expect(result.votingParticipants).toHaveLength(0);
+      // Only the creator participant can vote, not the spectator
+      expect(result.votingParticipants).toHaveLength(1);
+      expect(result.votingParticipants[0].id).toBe('p-creator');
     });
 
     it('should handle repository save failure', async () => {
@@ -276,7 +286,7 @@ describe('StartVoting Use Case', () => {
       const command = {
         sessionId: sessionId.getValue(),
         question: 'Test question',
-        initiatorId: creatorId
+        initiatorId: 'p1' // Use participant ID
       };
 
       // Mock repository to throw error on save

@@ -86,13 +86,14 @@ export class StartVotingUseCase {
   }
 
   private canInitiateVoting(session: any, initiatorId: string): boolean {
-    // Session creator can always start voting
-    if (session.getCreatorId() === initiatorId) {
-      return true;
-    }
-
     // Check if initiator is a participant (not spectator)
     const participant = session.findParticipant(initiatorId);
-    return participant !== null && participant.canVote();
+    if (!participant) {
+      return false;
+    }
+
+    // Only participants (not spectators) can start voting
+    // The creator is also a participant, so they can start voting
+    return participant.canVote();
   }
 }

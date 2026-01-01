@@ -14,6 +14,7 @@ export function createSessionRoutes(sessionController: SessionController): Route
   router.post('/sessions/:sessionId/voting/start', (req, res) => sessionController.startVoting(req, res));
   router.post('/sessions/:sessionId/voting/vote', (req, res) => sessionController.submitVote(req, res));
   router.post('/sessions/:sessionId/voting/reveal', (req, res) => sessionController.revealVotes(req, res));
+  router.post('/sessions/:sessionId/voting/finish', (req, res) => sessionController.finishVoting(req, res));
 
   return router;
 }

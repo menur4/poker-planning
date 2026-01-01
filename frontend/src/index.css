@@ -209,6 +209,18 @@ body {
 }
 .animate-spin { animation: spin 1s linear infinite; }
 
+@keyframes slide-up {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+.animate-slide-up { animation: slide-up 0.3s ease-out; }
+
 /* Transitions */
 .transition-all { transition: all 0.15s ease-in-out; }
 .transition-colors { transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out, border-color 0.15s ease-in-out; }
@@ -231,6 +243,22 @@ body {
 /* Display */
 .block { display: block; }
 .inline-block { display: inline-block; }
+
+/* Position */
+.fixed { position: fixed; }
+.bottom-4 { bottom: 1rem; }
+.right-4 { right: 1rem; }
+.z-50 { z-index: 50; }
+
+/* Additional utility classes */
+.space-x-3 > * + * { margin-left: 0.75rem; }
+.shadow-lg { box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); }
+
+/* Toast colors */
+.bg-green-500 { background-color: #22c55e; }
+.bg-red-500 { background-color: #ef4444; }
+.bg-blue-500 { background-color: #3b82f6; }
+.text-white { color: white; }
 
 /* Text colors for status */
 .text-green-800 { color: #166534; }

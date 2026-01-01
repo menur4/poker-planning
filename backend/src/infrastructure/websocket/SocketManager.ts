@@ -103,13 +103,13 @@ export class SocketManager {
 
   private async handleSessionJoin(
     socket: Socket<ClientToServerEvents, ServerToClientEvents, {}, SocketData>,
-    data: { sessionId: string; participantName: string; role: 'participant' | 'spectator' }
+    data: { sessionId: string; participantName: string; role: 'participant' | 'spectator'; participantId?: string }
   ): Promise<void> {
     try {
       // Validate session exists
       const sessionId = new SessionId(data.sessionId);
       const session = await this.sessionRepository.findById(sessionId);
-      
+
       if (!session) {
         socket.emit('error', { message: 'Session not found', code: 'SESSION_NOT_FOUND' });
         return;
@@ -120,16 +120,32 @@ export class SocketManager {
         return;
       }
 
-      // Join session using use case
-      const joinResult = await this.joinSessionUseCase.execute({
-        sessionId: data.sessionId,
-        participantName: data.participantName,
-        role: data.role
-      });
+      let participantId: string;
+
+      // If participantId is provided, use existing participant (don't create a new one)
+      if (data.participantId) {
+        const participant = session.findParticipant(data.participantId);
+        if (!participant) {
+          socket.emit('error', { message: 'Participant not found in session', code: 'PARTICIPANT_NOT_FOUND' });
+          return;
+        }
+        participantId = data.participantId;
+        console.log(`Participant ${data.participantName} (${participantId}) reconnecting to session ${data.sessionId}`);
+      } else {
+        // Only create a new participant if no participantId is provided
+        // This should rarely happen as the API should handle participant creation
+        const joinResult = await this.joinSessionUseCase.execute({
+          sessionId: data.sessionId,
+          participantName: data.participantName,
+          role: data.role
+        });
+        participantId = joinResult.participantId;
+        console.log(`New participant ${data.participantName} (${participantId}) joined session ${data.sessionId}`);
+      }
 
       // Store socket data
       socket.data.sessionId = data.sessionId;
-      socket.data.participantId = joinResult.participantId;
+      socket.data.participantId = participantId;
       socket.data.participantName = data.participantName;
       socket.data.role = data.role;
 
@@ -142,23 +158,19 @@ export class SocketManager {
       }
       this.sessionParticipants.get(data.sessionId)!.add(socket.id);
 
-      // Notify all participants in the session
-      socket.to(data.sessionId).emit('participant:joined', {
-        participantId: joinResult.participantId,
-        participantName: data.participantName,
-        role: data.role
-      });
-
-      // Send session data to the joining participant
+      // Send session data to ALL participants (including the one who just joined)
+      // This ensures everyone sees the updated participant list in real-time
+      // Using io.to() instead of socket.emit() + socket.to() to ensure ALL sockets in the room receive the event
       const updatedSession = await this.sessionRepository.findById(sessionId);
       if (updatedSession) {
-        socket.emit('session:updated', this.serializeSession(updatedSession));
+        const serializedSession = this.serializeSession(updatedSession);
+        // Send to ALL sockets in the room (including all sockets of the joining participant)
+        this.io.to(data.sessionId).emit('session:updated', { session: serializedSession });
+        console.log(`[WebSocket] Notified all participants in session ${data.sessionId} about participant join`);
       }
-
-      console.log(`Participant ${data.participantName} joined session ${data.sessionId}`);
     } catch (error) {
       console.error('Error joining session:', error);
-      socket.emit('error', { 
+      socket.emit('error', {
         message: error instanceof Error ? error.message : 'Failed to join session',
         code: 'JOIN_SESSION_ERROR'
       });
@@ -324,6 +336,85 @@ export class SocketManager {
     console.log(`Socket disconnected: ${socket.id}`);
   }
 
+  private calculateStatistics(session: any, currentVote: any): any {
+    const votes = Array.from(currentVote.getAllVotesWithParticipants().entries()).map((entry: any) => {
+      const [participantId, vote] = entry;
+      const participant = session.findParticipant(participantId);
+      return {
+        participantId,
+        participantName: participant?.getName() || 'Unknown',
+        voteValue: vote.getValue().getValue()
+      };
+    });
+
+    if (votes.length === 0) {
+      return {
+        totalVotes: 0,
+        average: 0,
+        median: 0,
+        mode: [],
+        distribution: {},
+        minVote: '',
+        maxVote: '',
+        consensus: true
+      };
+    }
+
+    // Filter numeric votes for calculations
+    const numericVotes = votes
+      .map(v => v.voteValue)
+      .filter(value => !isNaN(Number(value)) && value !== 'ABSTAIN' && value !== 'COFFEE' && value !== '?')
+      .map(value => Number(value));
+
+    // Calculate average
+    const average = numericVotes.length > 0
+      ? numericVotes.reduce((sum, vote) => sum + vote, 0) / numericVotes.length
+      : 0;
+
+    // Calculate median
+    let median = 0;
+    if (numericVotes.length > 0) {
+      const sortedVotes = [...numericVotes].sort((a, b) => a - b);
+      const mid = Math.floor(sortedVotes.length / 2);
+      median = sortedVotes.length % 2 === 0
+        ? (sortedVotes[mid - 1] + sortedVotes[mid]) / 2
+        : sortedVotes[mid];
+    }
+
+    // Calculate distribution (frequency of each vote value)
+    const distribution: Record<string, number> = {};
+    const allVoteValues = votes.map(v => v.voteValue);
+    allVoteValues.forEach(value => {
+      distribution[value] = (distribution[value] || 0) + 1;
+    });
+
+    // Calculate mode (most frequent vote(s))
+    const maxFrequency = Math.max(...Object.values(distribution));
+    const mode = Object.entries(distribution)
+      .filter(([_, count]) => count === maxFrequency)
+      .map(([value, _]) => value);
+
+    // Find min and max from numeric votes
+    const sortedNumericVotes = [...numericVotes].sort((a, b) => a - b);
+    const minVote = sortedNumericVotes.length > 0 ? sortedNumericVotes[0].toString() : allVoteValues[0] || '';
+    const maxVote = sortedNumericVotes.length > 0 ? sortedNumericVotes[sortedNumericVotes.length - 1].toString() : allVoteValues[0] || '';
+
+    // Check consensus - all votes must be the same
+    const uniqueVotes = new Set(allVoteValues);
+    const consensus = uniqueVotes.size <= 1;
+
+    return {
+      totalVotes: votes.length,
+      average,
+      median,
+      mode,
+      distribution,
+      minVote,
+      maxVote,
+      consensus
+    };
+  }
+
   private serializeSession(session: any): any {
     return {
       id: session.getId().getValue(),
@@ -345,7 +436,24 @@ export class SocketManager {
         question: session.getCurrentVote().getQuestion(),
         status: session.getCurrentVote().getStatus(),
         startedAt: session.getCurrentVote().getStartedAt(),
-        voteCount: session.getCurrentVote().getVoteCount()
+        voteCount: session.getCurrentVote().getVoteCount(),
+        // Include votes if revealed
+        votes: session.getCurrentVote().getStatus() === 'revealed'
+          ? Array.from(session.getCurrentVote().getAllVotesWithParticipants().entries()).map((entry: any) => {
+              const [participantId, vote] = entry;
+              const participant = session.findParticipant(participantId);
+              return {
+                participantId,
+                participantName: participant?.getName() || 'Unknown',
+                value: vote.getValue().getValue(),
+                submittedAt: new Date().toISOString()
+              };
+            })
+          : undefined,
+        // Include statistics if revealed
+        statistics: session.getCurrentVote().getStatus() === 'revealed'
+          ? this.calculateStatistics(session, session.getCurrentVote())
+          : undefined
       } : null,
       isVotingActive: session.isVotingActive()
     };
@@ -358,9 +466,15 @@ export class SocketManager {
 
   public async notifySessionUpdate(sessionId: string): Promise<void> {
     try {
+      console.log(`[WebSocket] Notifying session update for session: ${sessionId}`);
       const session = await this.sessionRepository.findById(new SessionId(sessionId));
       if (session) {
-        this.io.to(sessionId).emit('session:updated', this.serializeSession(session));
+        const serializedSession = this.serializeSession(session);
+        console.log(`[WebSocket] Emitting session:updated event to room: ${sessionId}`);
+        this.io.to(sessionId).emit('session:updated', { session: serializedSession });
+        console.log(`[WebSocket] Event emitted successfully`);
+      } else {
+        console.warn(`[WebSocket] Session ${sessionId} not found, cannot notify`);
       }
     } catch (error) {
       console.error('Error notifying session update:', error);

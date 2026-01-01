@@ -4,18 +4,29 @@ import { JoinSessionUseCase } from '../../application/use-cases/JoinSession';
 import { StartVotingUseCase } from '../../application/use-cases/StartVoting';
 import { SubmitVoteUseCase } from '../../application/use-cases/SubmitVote';
 import { RevealVotesUseCase } from '../../application/use-cases/RevealVotes';
+import { FinishVotingUseCase } from '../../application/use-cases/FinishVoting';
 import { SessionRepository } from '../../domain/repositories/SessionRepository';
 import { SessionId } from '../../domain/value-objects/SessionId';
+import { SocketManager } from '../../infrastructure/websocket/SocketManager';
 
 export class SessionController {
+  private socketManager?: SocketManager;
+
   constructor(
     private readonly createSessionUseCase: CreateSessionUseCase,
     private readonly joinSessionUseCase: JoinSessionUseCase,
     private readonly startVotingUseCase: StartVotingUseCase,
     private readonly submitVoteUseCase: SubmitVoteUseCase,
     private readonly revealVotesUseCase: RevealVotesUseCase,
+    private readonly finishVotingUseCase: FinishVotingUseCase,
     private readonly sessionRepository: SessionRepository
   ) {}
+
+  // Method to inject SocketManager after construction
+  setSocketManager(socketManager: SocketManager): void {
+    this.socketManager = socketManager;
+    console.log('[SessionController] SocketManager has been set');
+  }
 
   async createSession(req: Request, res: Response): Promise<void> {
     try {
@@ -119,7 +130,19 @@ export class SessionController {
           question: session.getCurrentVote()!.getQuestion(),
           status: session.getCurrentVote()!.getStatus(),
           startedAt: session.getCurrentVote()!.getStartedAt(),
-          voteCount: session.getCurrentVote()!.getVoteCount()
+          voteCount: session.getCurrentVote()!.getVoteCount(),
+          // Include votes if revealed
+          votes: session.getCurrentVote()!.getStatus() === 'revealed'
+            ? Array.from(session.getCurrentVote()!.getAllVotesWithParticipants().entries()).map(([participantId, vote]) => {
+                const participant = session.findParticipant(participantId);
+                return {
+                  participantId,
+                  participantName: participant?.getName() || 'Unknown',
+                  value: vote.getValue().getValue(),
+                  submittedAt: new Date().toISOString()
+                };
+              })
+            : undefined
         } : null,
         isVotingActive: session.isVotingActive()
       };
@@ -151,6 +174,11 @@ export class SessionController {
       const command = { sessionId, question, initiatorId };
       const result = await this.startVotingUseCase.execute(command);
 
+      // Notify all participants via WebSocket
+      if (this.socketManager) {
+        await this.socketManager.notifySessionUpdate(sessionId);
+      }
+
       res.status(200).json({
         success: true,
         data: result
@@ -178,6 +206,11 @@ export class SessionController {
 
       const command = { sessionId, participantId, voteValue };
       const result = await this.submitVoteUseCase.execute(command);
+
+      // Notify all participants via WebSocket
+      if (this.socketManager) {
+        await this.socketManager.notifySessionUpdate(sessionId);
+      }
 
       res.status(200).json({
         success: true,
@@ -207,12 +240,50 @@ export class SessionController {
       const command = { sessionId, initiatorId };
       const result = await this.revealVotesUseCase.execute(command);
 
+      // Notify all participants via WebSocket
+      if (this.socketManager) {
+        await this.socketManager.notifySessionUpdate(sessionId);
+      }
+
       res.status(200).json({
         success: true,
         data: result
       });
     } catch (error) {
       console.error('Error revealing votes:', error);
+      const statusCode = error instanceof Error && error.message.includes('not found') ? 404 : 400;
+      res.status(statusCode).json({
+        error: error instanceof Error ? error.message : 'Internal server error'
+      });
+    }
+  }
+
+  async finishVoting(req: Request, res: Response): Promise<void> {
+    try {
+      const { sessionId } = req.params;
+      const { initiatorId } = req.body;
+
+      if (!initiatorId) {
+        res.status(400).json({
+          error: 'Missing required field: initiatorId'
+        });
+        return;
+      }
+
+      const command = { sessionId, initiatorId };
+      await this.finishVotingUseCase.execute(command);
+
+      // Notify all participants via WebSocket
+      if (this.socketManager) {
+        await this.socketManager.notifySessionUpdate(sessionId);
+      }
+
+      res.status(200).json({
+        success: true,
+        message: 'Voting finished successfully'
+      });
+    } catch (error) {
+      console.error('Error finishing voting:', error);
       const statusCode = error instanceof Error && error.message.includes('not found') ? 404 : 400;
       res.status(statusCode).json({
         error: error instanceof Error ? error.message : 'Internal server error'

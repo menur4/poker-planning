@@ -8,6 +8,7 @@ import type {
   StartVotingRequest,
   SubmitVoteRequest,
   RevealVotesRequest,
+  FinishVotingRequest,
   Session
 } from '../types';
 
@@ -79,6 +80,13 @@ export class ApiService {
     request: RevealVotesRequest
   ): Promise<void> {
     await api.post(`/sessions/${sessionId}/voting/reveal`, request);
+  }
+
+  static async finishVoting(
+    sessionId: string,
+    request: FinishVotingRequest
+  ): Promise<void> {
+    await api.post(`/sessions/${sessionId}/voting/finish`, request);
   }
 
   static async getUserSessions(creatorId: string): Promise<Session[]> {
